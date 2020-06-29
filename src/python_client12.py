@@ -13,7 +13,7 @@ from PlayerHand import PlayerHand
 from BestHand25Wild import BestHand25Wild
 import threading
 from PokerHand import *
-# from ShowDownGame import ShowDownGame
+from ShowDownGame import ShowDownGame
 from ShowDownPoints import ShowDownPoints
 
 player_names = ["Peter ", "Johnny", "Ming  ", "Tony  ", "Edmond", "Philip"]
@@ -296,10 +296,10 @@ def show_best25_hand(*args):
          ties +=1
          # print ("Player Ties - ", end="")
 
-    cumulative_score += player_total_adv
-    cumulative_score = round(cumulative_score,2)
+    cumulative_points += player_total_adv
+    cumulative_points = round(cumulative_points,2)
     player_total_adv = round(player_total_adv,2)
-    # print ("Player", player_total_score, "Computer", points[0], "Difference", player_total_adv, "Cumulative", cumulative_score)
+    # print ("Player", player_total_score, "Computer", points[0], "Difference", player_total_adv, "Cumulative", cumulative_points)
 
     x_label = 13 * X_GAP
     wins_label = tk.Label(text="wins = " + str(wins) + 5 * " ", fg="blue", bg="white", font=12)
@@ -308,7 +308,7 @@ def show_best25_hand(*args):
     losses_label.place(x=x_label, y=725-200)
     ties_label = tk.Label(text="ties = " + str(ties)+ 5 * " ", fg="blue", bg="white", font=12)
     ties_label.place(x=x_label, y=750-200)
-    cum_label = tk.Label(text="cum = " + str(cumulative_score) + 12 * " ", fg="blue", bg="white", font=12)
+    cum_label = tk.Label(text="cum = " + str(cumulative_points) + 12 * " ", fg="blue", bg="white", font=12)
     cum_label.place(x=x_label, y=775-200)
 
 
@@ -462,27 +462,6 @@ def receive_result(sck, string):
     # let's do showdown on hands
     winpoints = ShowDownPoints(points_stored, play_hand)
     sd = ShowDownGame(winpoints.player_points, play_hand)
-
-    # for i in range(6):
-    #     print ("player", i, "  ", end = "")
-    #     print ('{:8}'.format(player_names[i]), end="")
-    #     print (points_stored[i])
-
-    # print()
-    # for i in range(6):
-    #     print ('{:8}'.format(player_names[i]), end=" ")
-        #print ("player", i, end="")
-    #     print ('{:8}'.format(player_names[i]), end="")
-    #     print (points_stored[i])
-
-    # print()
-    # for i in range(6):
-    #     print ('{:8}'.format(player_names[i]), end=" ")
-    #     #print ("player", i, end="")
-    #     for j in range(1,7):
-    #         hand_description_string = my_hand.get_description_from_score(points_stored[i][j][0], str(j))
-    #         print ('{:>12}'.format(hand_description_string), end="")
-    #     print()
 
 def showdown():
     receive_result(client_socket, "m")
