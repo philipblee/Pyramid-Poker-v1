@@ -1,16 +1,42 @@
-"""python_client12_standalone
+"""python_client sets up client_socket
+v1 then uses method connect to establish connection
+then uses client_socket to receive Welcome message
+then uses client_socket to receive hand_pickle
+then unpickles hand using pickle.load and prints
+v2 no change on client
+v3 added a GUI to show cards in text
+v4 show cards in images
+v5 make cards movable
+v6 put two buttons on board - one for I'm finished and one for Toggle which is initially disabled, also
+   moved playing cards to lower right hand corner, now board is much smaller instead of 13x8, it's now 10x6
+v7 improved GUI considerably
+v8 simplifying on X_OFFSET, Y_OFFSET and other miscellaneous statements
+client v9 standalone does not talk to server but the UI is greatly improved as follows:
+    board is now columns 5-15, white sqaures are 5, 5, 3 ,3, 1
+    columns 1-5 and rows 1-5 contain the hand - 25 playing cards
+    buttons are on right in columns 13 - Next, Best, Score, Rank, Suit
+v9 adds server back - adds a button I'm done that sends player_hand to server, sort of working
+v10 trying to get showdown to work on server
+v11 no change I think
 """
 
-from Deck import Deck
+import socket
+import pickle
+import time
+import tkinter as tk
+from Deck import *
 from display_points import display_points, display_points_clear
-from create_card_images import create_card_images
+from create_card_images import *
 from PlayerHand import PlayerHand
 from BestHand25Wild import BestHand25Wild
-import tkinter as tk
+import threading
+from PokerHand import *
 from sort_cards import rank_sort, suit_rank_sort
-from PlaySixHands25 import PlaySixHands25
+# from ShowDownGame import ShowDownGame
+from ShowDownPoints import ShowDownPoints
 
 player_names = ["Peter ", "Johnny", "Ming  ", "Tony  ", "Edmond", "Philip"]
+# from PyramidPokerNetwork import onMotion, onRelease, onClick
 window = tk.Tk()
 topFrame = tk.Frame(window)
 
@@ -55,6 +81,7 @@ def onRelease(event):  # anytime you change where widgets are, you need to fix
 
     # look for "overlappers" to current card slot
     overlappers = w.find_overlapping(x1, y1, x2, y2)
+    # print ("overlappers", overlappers)
     if len(overlappers) > 0:
         overlap_cards = []
         current_card = []
@@ -70,16 +97,19 @@ def onRelease(event):  # anytime you change where widgets are, you need to fix
 
         # if overlap - moving card to right by 33%
         if overlap_cards != []:
-            w.move("current", + X_GAP/4, 0)
+            w.move("current", + X_GAP/5, 0)
 
     # count number of cards left
     cards_left = list(w.find_withtag("card"))
     list_of_cards_left = list(cards_left)
     for object_id in list_of_cards_left:
-        # remove those with x > 5 or y < 0 or y == 6
+        # remove those with x > 5 and y < 1
         if w.coords(object_id)[0] > 5 * X_GAP - 10 or \
             w.coords(object_id)[1] < 0 * Y_GAP or \
             w.coords(object_id)[1] == 6 * Y_GAP:
+        # cards left are those on blue and not on yellow
+        # if  w.coords(object_id)[0] < (5 * X_GAP - 10): # \
+        #         # and w.coords(object_id)[1] < (7 * Y_GAP - 10):
             cards_left.remove(object_id)
 
     fixed_destination = [0*X_GAP + 9, 6 * Y_GAP+19], [1*X_GAP + 9, 6 * Y_GAP+19], \
@@ -99,19 +129,23 @@ def onRelease(event):  # anytime you change where widgets are, you need to fix
             index += 1
     return
 
-def display_next_hand(*args):
+def connect():
+    pass
+
+def show_next_hand(*args):
     """ Create the card list use Deck().deal and display_cardlist them"""
-    global twentyfive_cards, six_hands
+    global twentyfive_cards
     # disable show_next and enable show_best
-    display_best25_hand_button["state"] = "normal"
-    display_next_hand_button["state"] = "disabled"
+    show_best25_hand_button["state"] = "normal"
+    show_next_hand_button["state"] = "disabled"
     six_hands = Deck(6, 25, 3).deal()
-    pyramid_poker_hand = six_hands[0]
-    twentyfive_cards = (sorted(pyramid_poker_hand, key =rank_sort, reverse=True))
+    a = six_hands[0]
+    twentyfive_cards = (sorted(a, key =rank_sort, reverse=True))
     window.title("Play Pyramid Poker")
     w.delete("all")   # clear out last hand
-
+    # create white rectangles
     # create 10 rectangles - hand 6
+    # Y_OFFSET = 60 + 60 + 86 # add 60 to account for buttons on top
     X_OFFSET = 5 * X_GAP + 5
     x = X_OFFSET
     y = Y_OFFSET
@@ -167,7 +201,7 @@ def display_next_hand(*args):
         x += X_GAP
 
     # create 5 grey rectangles - discards
-    x = 5
+    x = X_OFFSET
     y += Y_GAP
     for i in range(5):
         fill_color = "light grey"
@@ -181,6 +215,8 @@ def display_next_hand(*args):
     x = 10 * X_GAP + 6
     y = 3 * Y_GAP + 15
     display_points_clear(x, y) # best hand points
+    # display_points_clear(x, y + 2 * Y_GAP - 12) # player points
+    # display_points_clear(x + 2.5*X_GAP, y) # diff points
 
 def show_twentyfive_cards():
     w.delete("card")
@@ -195,76 +231,29 @@ def show_twentyfive_cards():
             x = 0
 
 def toggle_finished():
-    if display_best25_hand_button["state"] == "normal":
-        display_best25_hand_button["state"] = "disabled"
+    if show_best25_hand_button["state"] == "normal":
+        show_best25_hand_button["state"] = "disabled"
         disable_show_best["text"] = "Toggle"
     else:
-        display_best25_hand_button["state"] = "normal"
+        show_best25_hand_button["state"] = "normal"
         disable_show_best["text"] = "Toggle"
 
-def display_player_hand():
-    """ determines player_hand based on position of cards in twentyfive_cards
-    """
-    player_hand = [[],[],[],[],[],[],[]]
-    player_hand_points = [0,0,0,0,0,0,0]
-    min_cards = [0, 1, 3, 3, 3, 5, 5]
+def stub():
+    pass
 
-    # determine the player_hand based on Board placement of cards
-    for card in twentyfive_cards:
-         card_placex = int((w.coords(card)[0] + X_OFFSET)//X_GAP) + 1 # determines x coordinate of card
-         card_placey = int((w.coords(card)[1] + Y_OFFSET)//Y_GAP) # determines y coordinate of card
-         if card_placex > 5 and card_placey != 6:
-             hand_number = 6 - card_placey
-             player_hand[hand_number].append(card)
-
-    # check for missing the minimum cards per pokerhand
-    valid_hand = True
-    for i in range(1, 7):
-        if len(player_hand[i]) < min_cards[i]:
-            valid_hand = False
-            message = "Player Hand is missing cards - Try again"
-
-    # check to make sure hand6>hand5, etc.
-    if valid_hand == True:
-        # replace wild card with specific card
-        player = PlayerHand(player_hand)
-        player_hand_points = player.player_hand_score
-
-        for i in range (1,6):
-            # print (i+1, player_hand_score[i+1], i, player_hand_score[i])
-            if player_hand_points[i+1] <= player_hand_points[i]:
-                valid_hand = False
-                message = "Player Hand out of order - Try again"
-                # print (message)
-
-    if valid_hand == False:
-
-        pass
-        # message = "Player Hand Invalid - Try Again"
-
-    else:
-        message = "Player Hand Valid"
-        x_label = 10 * X_GAP + 10 # for labels
-        y_label = 310 + 150 # aligns with player hand
-        xloc3 = x_label
-        yloc3 = y_label + 25
-        valid_hand_label = tk.Label(text=message , fg="blue", bg="white", font=12)
-        valid_hand_label.place(x=x_label + 3 *X_GAP, y=y_label+75)
-        player_hand_label = tk.Label(text="Player's Hand Points" , fg="blue", bg="white", font=12)
-        player_hand_label.place(x=x_label, y=y_label+25)
-        display_points(player_hand_points, xloc3, yloc3 + 25)
-    return player_hand_points
-
-def display_best25_hand(*args):
+def show_best25_hand(*args):
     """ Given twenty_five cards, find the best hand and show scoring
     """
     global message_left_click_label
+    global count
+    count += 1
+    # print ("display_best25_hand being invoked", count)
 
-    display_best25_hand_button["state"] = "disabled"
-    display_next_hand_button["state"] = "normal"
+    show_best25_hand_button["state"] = "disabled"
+    show_next_hand_button["state"] = "normal"
 
-    player_points = display_player_hand()
-    player_total_points = player_points[0]
+    player_score = show_player_score()
+    player_total_score = player_score[0]
 
     message_left_click_label = tk.Label(text="TBD")
 
@@ -282,8 +271,11 @@ def display_best25_hand(*args):
     # start_time = time.time()
     temp_card_list2 = list(card_list2)
     myhand = BestHand25Wild(temp_card_list2)
-    besthand25_points = myhand.best_hand_points
+    score = myhand.best_hand_points
     best_25handx = myhand.best_25handx
+
+    # print points
+    # end_time = time.time()
 
     # showing best hand
     window.title("Best Hand Below and Best Scores on Right")
@@ -299,23 +291,23 @@ def display_best25_hand(*args):
             x += X_GAP * overlap_factor
 
     # showing points of best hand
-    x_label = 10 * X_GAP + 10
+    x_label = 10 * X_GAP + 7
     y_label = 310 # aligns with best_hand
     x = x_label
     y = y_label
-    display_points(besthand25_points, x, y)
+    display_points(score, x, y)
 
-    player_total_adv = player_total_points - besthand25_points[0]
+    player_total_adv = player_total_score - score[0]
 
     # display_cardlist points diff next to player scores, y is the same, x is 200 less
-    x_label = 13 * X_GAP
+    x = x + 3 * X_GAP
     y = y
-    points_diff = [0,0,0,0,0,0,0]
+    score_diff = [0,0,0,0,0,0,0]
     for i in range (1,7):
-        points_diff[i] = round(player_points[i][1] - besthand25_points [i][1], 3)
-    points_diff[0] = round (player_points[0] - besthand25_points[0],3)
+        score_diff[i] = round(player_score[i][1] - score [i][1], 3)
+    score_diff[0] = round (player_score[0] - score[0],3)
 
-    display_points(points_diff, x_label, y)
+    display_points(score_diff, x, y)
 
     # keeping points of wins, losses and ties
     global wins
@@ -323,54 +315,123 @@ def display_best25_hand(*args):
     global losses
     global cumulative_points
 
-    if player_total_points > besthand25_points[0]:
+    if player_total_score > score[0]:
          wins += 1
          # print ("Player Wins - ", end="")
 
-    elif besthand25_points[0] > player_total_points:
+    elif score[0] > player_total_score:
          losses +=1
          # print ("Player Loses - ", end="")
 
-    elif besthand25_points[0] == player_total_points:
+    elif score[0] == player_total_score:
          ties +=1
          # print ("Player Ties - ", end="")
 
     cumulative_points += player_total_adv
-    cumulative_points = round(cumulative_points, 2)
+    cumulative_points = round(cumulative_points,2)
+    player_total_adv = round(player_total_adv,2)
+    # print ("Player", player_total_score, "Computer", points[0], "Difference", player_total_adv, "Cumulative", cumulative_points)
 
     x_label = 13 * X_GAP
-    y_label = 7 * Y_GAP
     wins_label = tk.Label(text="wins = " + str(wins) + 5 * " ", fg="blue", bg="white", font=12)
-    wins_label.place(x=x_label, y=y_label-75)
+    wins_label.place(x=x_label, y=700-200)
     losses_label = tk.Label(text="losses = " + str(losses) + 5 * " ", fg="blue", bg="white", font=12)
-    losses_label.place(x=x_label, y=y_label-50)
+    losses_label.place(x=x_label, y=725-200)
     ties_label = tk.Label(text="ties = " + str(ties)+ 5 * " ", fg="blue", bg="white", font=12)
-    ties_label.place(x=x_label, y=y_label-25)
+    ties_label.place(x=x_label, y=750-200)
     cum_label = tk.Label(text="cum = " + str(cumulative_points) + 12 * " ", fg="blue", bg="white", font=12)
-    cum_label.place(x=x_label, y=y_label)
+    cum_label.place(x=x_label, y=775-200)
+
+
+def show_player_score():
+    global save_player_hand
+    """ First, it determines how player set his hand based on position of cards in twentyfive_cards"""
+    # make sure every card is use
+    player_hand = [[],[],[],[],[],[],[]]
+    player_hand_score = [0,0,0,0,0,0,0]
+    # print ("show_player_hand", twentyfive_cards)
+
+    # place cards from Playing Board into player_hand
+    for card in twentyfive_cards:
+         card_placex = int((w.coords(card)[0] + X_OFFSET)//X_GAP) + 1 # determines x coordinate of card
+         card_placey = int((w.coords(card)[1] + Y_OFFSET)//Y_GAP) # determines y coordinate of card
+         if card_placex > 5:
+             hand_number = 6 - card_placey
+             card_number = card_placex - 5
+             player_hand[hand_number].append(card)
+             # print(card, "card_number", card_number, "hand_number", hand_number)
+    # print ("show_player_hand", player_hand)
+
+    # see if there are at least the right number of cards per hand
+    min_cards = [0, 1, 3, 3, 3, 5, 5]
+    valid_hand = True
+    for i in range(1, 7):
+        # print (i, len(player_hand[i]), min_cards[i])
+        if len(player_hand[i]) < min_cards[i]:
+            valid_hand = False
+            message = "Player Hand is missing cards - Try again"
+            # print (message)
+
+    # check to make sure hand6>hand5, etc.
+    if valid_hand == True:
+        # replace wild card with specific card
+        player = PlayerHand(player_hand)
+        # print ("player_hand after",player_hand)
+        player_hand_score = player.player_hand_score
+        save_player_hand = player_hand
+
+        for i in range (1,6):
+            # print (i+1, player_hand_score[i+1], i, player_hand_score[i])
+            if player_hand_score[i+1] <= player_hand_score[i]:
+                valid_hand = False
+                message = "Player Hand out of order - Try again"
+                # print (message)
+
+    if valid_hand == False:
+        message = "Player Hand Invalid - Try Again"
+        x_label = 10 * X_GAP # for labels
+        y_label = 5 * Y_GAP # aligns with player hand
+        xloc3 = x_label
+        yloc3 = y_label + 25
+        # valid_hand_label = tk.Label(text=message, fg="red", bg="white", font=12)
+        # valid_hand_label.place(x=x_label, y=y_label + 25)
+        # display_points(player_hand_score, xloc3, yloc3 + 25)
+        # print ("Player Hand Invalid, player_score set to -9999, restore_position")
+        # player_hand_score = -9999
+
+    else:
+        message = "Player Hand Valid"
+        x_label = 10 * X_GAP + 10 # for labels
+        y_label = 310 + 150 # aligns with player hand
+        xloc3 = x_label
+        yloc3 = y_label + 25
+        valid_hand_label = tk.Label(text=message , fg="blue", bg="white", font=12)
+        valid_hand_label.place(x=x_label, y=y_label+25)
+        display_points(player_hand_score, xloc3, yloc3 + 25)
+    return player_hand_score
 
 def switch_best():
-    if display_best25_hand_button["state"] == "normal":
-        display_best25_hand_button["state"] = "disabled"
+    if show_best25_hand_button["state"] == "normal":
+        show_best25_hand_button["state"] = "disabled"
         disable_show_best["text"] = "Toggle"
     else:
-        display_best25_hand_button["state"] = "normal"
+        show_best25_hand_button["state"] = "normal"
         disable_show_best["text"] = "Toggle"
 
 def switch_next():
-    if display_next_hand_button["state"] == "normal":
-        display_next_hand_button["state"] = "disabled"
+    if show_next_hand_button["state"] == "normal":
+        show_next_hand_button["state"] = "disabled"
         disable_show_next["text"] = "Toggle"
     else:
-        display_next_hand_button["state"] = "normal"
+        show_next_hand_button["state"] = "normal"
         disable_show_next["text"] = "Toggle"
         
 def switch_player_score():
-    if display_player_hand_button["state"] == "normal":
-        display_player_hand_button["state"] = "disabled"
+    if show_player_score_button["state"] == "normal":
+        show_player_score_button["state"] = "disabled"
         disable_show_player_score["text"] = "Toggle"
     else:
-        display_player_hand_button["state"] = "normal"
+        show_player_score_button["state"] = "normal"
         disable_show_player_score["text"] = "Toggle"
 
 def switch_suit():
@@ -411,54 +472,48 @@ def rank_quick_sort():
 def commandpass():
     pass
 
-def showdown():
-    global six_hands
-    board4 = Board()
-    playsixhands = PlaySixHands25(six_hands)
-    board4.pyramid_hands = playsixhands.best_pyramid_hands
-    board4.player_win_points = playsixhands.player_win_points
-    board4.display_6hands()
-
+# if True:
 image_dict = create_card_images()
 X_GAP = 72
 Y_GAP = 95
-X_OFFSET = 10
+X_OFFSET = 13
 Y_OFFSET = 7
 y = Y_OFFSET
 x = X_OFFSET
+X_OFFSET = 11
 wins = 0
 losses = 0
 ties = 0
 cumulative_points = 0
-w = tk.Canvas(window, height=7*Y_GAP+10+Y_OFFSET + 10, width=15*X_GAP+X_OFFSET, bg="light blue", relief="raised")
-
+w = tk.Canvas(window, height=7*Y_GAP+10+Y_OFFSET, width=15*X_GAP+X_OFFSET, bg="light blue", relief="raised")
+count = 0
 xloc1 = 11 * X_GAP + 10
 yloc1 = 2 * Y_GAP + 10
 xloc2 =xloc1 + 2 * X_GAP
-button_width = 1.9 * X_GAP
+
+button_width = 1.5 * X_GAP
 
 # finished_setup_button, toggle_show_next_hand to enable/disable
 done_button = tk.Button(window, text="I'm Done!", font=12, command=commandpass)
 done_button.place(x=xloc2, y=yloc1-75, width=button_width, height=24)
 disable_done = tk.Button(window, text="Toggle", font=12, command=switch_done)
 disable_done.place(x=xloc2, y=yloc1-50, width=button_width, height=24)
-showdown_button = tk.Button(window, text="Showdown", font=12, command=showdown)
+showdown_button = tk.Button(window, text="Showdown", font=12, command=commandpass)
 showdown_button.place(x=xloc2, y=yloc1-25, width=button_width, height=24)
-
 # show_next_hand_button, toggle with disable_show_next
-display_next_hand_button = tk.Button(window, text="Next Hand", font=12, command=display_next_hand)
-display_next_hand_button.place(x=xloc1, y=yloc1, width=button_width, height=24)
+show_next_hand_button = tk.Button(window, text="Next", font=12, command=show_next_hand)
+show_next_hand_button.place(x=xloc1, y=yloc1, width=button_width, height=24)
 disable_show_next = tk.Button(window, text="Toggle", font=12, command=switch_next)
 disable_show_next.place(x=xloc2, y=yloc1, width=button_width, height=24)
 
 # show_best25_hand_button, toggle_show_best to enable/disable
-display_best25_hand_button = tk.Button(window, text="Best Hand", font=12, command=display_best25_hand)
-display_best25_hand_button.place(x=xloc1, y=yloc1 + 25, width=button_width, height=24)
+show_best25_hand_button = tk.Button(window, text="Best", font=12, command=show_best25_hand)
+show_best25_hand_button.place(x=xloc1, y=yloc1 + 25, width=button_width, height=24)
 disable_show_best = tk.Button(window, text="Toggle", font=12, command=switch_best)
 disable_show_best.place(x=xloc2, y=yloc1 + 25, width=button_width, height=24)
 
-display_player_hand_button = tk.Button(window, text="Points", font=12, command=display_player_hand)
-display_player_hand_button.place(x=xloc1, y=yloc1 + 50, width=button_width, height=24)
+show_player_score_button = tk.Button(window, text="Score", font=12, command=show_player_score)
+show_player_score_button.place(x=xloc1, y=yloc1 + 50, width=button_width, height=24)
 disable_show_player_score = tk.Button(window, text="Toggle", font=12, command=switch_player_score)
 disable_show_player_score.place(x=xloc2, y=yloc1 + 50, width=button_width, height=24)
 
@@ -469,7 +524,7 @@ rank_button = tk.Button(window, text="Rank", font=12, command=rank_quick_sort)
 rank_button.place(x=xloc2, y=yloc1 + 75, width=button_width, height=24)
 
 w.pack()
-display_next_hand()
+show_next_hand()
 
 w.tag_bind("card", "<Button-1>", onClick)
 w.tag_bind("card", "<B1-Motion>", onMotion)
