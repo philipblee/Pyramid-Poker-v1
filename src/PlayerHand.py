@@ -1,16 +1,16 @@
 from src.PokerHand import PokerHand
 
 class PlayerHand():
-    """ Playerhand takes player_hand which is a list of 7 hands with
-        with player_hand[0] = None, all hands can have up to
-        3 wild cards which will be resolved by determine_player_wild_cards"""
+    """ Playerhand takes player_hand which is a list of 6 poker hands with
+        with player_hand[0] = None, 6 poker hands can have up to 3 wilds cards
+        which will be fixed to 3 specific cards by determine_player_wild_cards"""
 
     def __init__(self, player_hand):
         self.player_hand = player_hand
         x = self.points(self.player_hand)
 
     def points(self, player_hand):
-        """ generates points and points for all six player hands"""
+        """ generates scores and points for the player's six poker hands"""
         players_25card_hand = self.determine_player_wild_cards(self.player_hand)
         my_hand = PokerHand()
         self.player_hand_score = my_hand.get_six_hands_points(self.player_hand)

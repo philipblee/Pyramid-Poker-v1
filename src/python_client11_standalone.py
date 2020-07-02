@@ -1,39 +1,16 @@
-"""python_client sets up client_socket
-v1 then uses method connect to establish connection
-then uses client_socket to receive Welcome message
-then uses client_socket to receive hand_pickle
-then unpickles hand using pickle.load and prints
-v2 no change on client
-v3 added a GUI to show cards in text
-v4 show cards in images
-v5 make cards movable
-v6 put two buttons on board - one for I'm finished and one for Toggle which is initially disabled, also
-   moved playing cards to lower right hand corner, now board is much smaller instead of 13x8, it's now 10x6
-v7 improved GUI considerably
-v8 simplifying on X_OFFSET, Y_OFFSET and other miscellaneous statements
-client v9 standalone does not talk to server but the UI is greatly improved as follows:
-    board is now columns 5-15, white sqaures are 5, 5, 3 ,3, 1
-    columns 1-5 and rows 1-5 contain the hand - 25 playing cards
-    buttons are on right in columns 13 - Next, Best, Score, Rank, Suit
-v9 adds server back - adds a button I'm done that sends player_hand to server, sort of working
-v10 trying to get showdown to work on server
-v11 no change I think
+"""python_client11_standalone
+
 """
 
-import socket
-import pickle
-import time
-import tkinter as tk
-from Deck import *
-from display_points import display_points, display_points_clear
-from create_card_images import *
-from PlayerHand import PlayerHand
-from BestHand25Wild import BestHand25Wild
-import threading
-from PokerHand import *
-from sort_cards import rank_sort, suit_rank_sort
+
+from src.display_points import display_points, display_points_clear
+from src.create_card_images import *
+from src.PlayerHand import PlayerHand
+from src.BestHand25Wild import BestHand25Wild
+from src.sort_cards import rank_sort, suit_rank_sort
+from src.ShowDownPoints import ShowDownPoints
 # from ShowDownGame import ShowDownGame
-from ShowDownPoints import ShowDownPoints
+
 
 player_names = ["Peter ", "Johnny", "Ming  ", "Tony  ", "Edmond", "Philip"]
 # from PyramidPokerNetwork import onMotion, onRelease, onClick

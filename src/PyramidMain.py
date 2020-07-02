@@ -1,11 +1,11 @@
 from Deck import Deck
-from Display import Display
+from DisplayBoard import DisplayBoard
 from PlaySixHands25 import PlaySixHands25
 
 endgame = False
 while endgame == False:
 
-    display = Display()
+    display = DisplayBoard()
     pyramid_poker_hands = Deck(6, 25, 3).deal()
 
     print ("running PyramidMain")

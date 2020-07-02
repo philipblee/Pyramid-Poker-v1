@@ -8,6 +8,7 @@ class PyramidHand:
     """
     def __init__(self, pyramid_hand):
         self.pyramid_hand = pyramid_hand
+        self.pyramid_hand_points = [0,0,0,0,0,0,0]
         self.pyramid_compact = [[] for i in range(7)]
         # create compact format for all 6 hands
         for i in range(1,7):

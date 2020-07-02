@@ -1,5 +1,5 @@
-from src.straight_count import *
-from src.sort_cards import *
+from src.straight_count import straight_count
+from src.sort_cards import rank_sort, suit_rank_sort
 from itertools import *
 
 ranks = "W123456789TJQKA"
