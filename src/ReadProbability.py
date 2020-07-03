@@ -12,16 +12,13 @@ class ScoreProb(dict):
         return (self[pattern] for pattern in self if re.match(dict, pattern))
 
 class ReadProbability():
-    """ class reads PROBABILITY_FILE_NEW2 and stores into score_prob
+    """ class reads Probability.csv and stores into score_prob
         which is a dictionary with a find method for pattern matching
-        when the exect match cannot be found in dictionary"""
+        when the exact match cannot be found in dictionary"""
     def __init__(self):
-        # my_hand = Hand()
         import os
         rel_path = "Probability.csv"
         cwd = os.getcwd()
-
-
         with open(rel_path, "r") as e:
             reader = csv.reader(e)
             x = list(reader)

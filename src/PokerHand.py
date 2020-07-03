@@ -1,7 +1,7 @@
 from enum import Enum
 from src.Analysis import *
 from src.ReadProbability import *
-from src.CumulativeLearning import *
+from src.ReadCumulative import *
 from src.sort_cards import *
 from src.get_dir import get_dir
 # from src.WriteProb import *
@@ -276,7 +276,7 @@ class PokerHand():
         global prob_dictionary
         global ProbabilityFile
         global keycount, patterncount, score_dict, update_count
-        prob_dictionary = True
+        prob_dictionary = False
         if first == True:
             if prob_dictionary:
                 dir_name = os.path.dirname(os.getcwd()) + '/src'
@@ -284,7 +284,7 @@ class PokerHand():
                 file = open("prob_dictionary", "rb")
                 score_dict = pickle.load(file)
             else:
-                CumulativeLearning()
+                ReadCumulative()
                 ProbabilityFile = ReadProbability()
             first = False
             keycount = 0
@@ -326,7 +326,7 @@ class PokerHand():
                     if update_count >0:
                         # print("     A new points is found", update_count, key, prob)
                         get_dir()
-                        file = open("prob_dictionary", "wb")
+                        file = open("prob_dictionary1", "wb")
                         pickle.dump(score_dict, file)
                         file.close()
                         # WriteProb(score_dict)

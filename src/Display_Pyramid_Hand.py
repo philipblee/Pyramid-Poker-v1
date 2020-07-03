@@ -8,6 +8,7 @@ from src.BestHand25Wild import BestHand25Wild
 import tkinter as tk
 from src.Deck import Deck
 from src.sort_cards import suit_rank_sort, rank_sort, rank
+from display_board import display_board
 
 player_names = ["Peter ", "Johnny", "Ming  ", "Tony  ", "Edmond", "Philip"]
 window = tk.Tk()
@@ -106,37 +107,7 @@ def display_next_hand(*args):
     window.title("Play Pyramid Poker")
     w.delete("all")  # clear out last hand
 
-    # playing_board is list(number of white squares, then list of yellow cells)
-    playing_board = [[0,[]],
-                    [1,[]],
-                    [3,[]],
-                    [5,[3,4]],
-                    [6,[3,4,5]],
-                    [8,[5,6,7]],
-                    [10,[5,6,7,8,9]]]
-
-    X_OFFSET = 5 * X_GAP + 5
-    y = Y_OFFSET
-
-    for hand_show in playing_board[6:0:-1]:
-        x = X_OFFSET
-        fill_color = "white"
-        squares = hand_show[0]
-        yellow = hand_show[1]
-        for i in range(squares):
-            if i in yellow:
-                fill_color = "light yellow"
-            w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill=fill_color, tag=("hand"+str(i), "board"))
-            x += X_GAP
-        y += Y_GAP
-
-    # create 5 grey rectangles - discards
-    x = 5
-    for i in range(5):
-        fill_color = "light grey"
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill=fill_color, tags=("hand3", "board"))
-        x += X_GAP
-
+    display_board(w, X_GAP, Y_GAP, X_OFFSET, Y_OFFSET)
     show_twentyfive_cards()
     rank_button["state"] = "disabled"
 
@@ -144,6 +115,8 @@ def display_next_hand(*args):
     x = 10 * X_GAP + 6
     y = 3 * Y_GAP + 15
     display_points_clear(x, y)  # best hand points
+
+
 
 def show_twentyfive_cards():
     w.delete("card")

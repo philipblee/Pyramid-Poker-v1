@@ -10,6 +10,7 @@ from src.BestHand25Wild import BestHand25Wild
 from src.sort_cards import rank_sort, suit_rank_sort
 from src.ShowDownPoints import ShowDownPoints
 # from ShowDownGame import ShowDownGame
+from display_board import display_board
 
 
 player_names = ["Peter ", "Johnny", "Ming  ", "Tony  ", "Edmond", "Philip"]
@@ -76,21 +77,22 @@ def onRelease(event):  # anytime you change where widgets are, you need to fix
         if overlap_cards != []:
             w.move("current", + X_GAP/5, 0)
 
-    # count number of cards left
+    # count number of cards left which starts with all cards
     cards_left = list(w.find_withtag("card"))
     list_of_cards_left = list(cards_left)
     for object_id in list_of_cards_left:
-        # remove those with x > 5 and y < 1
-        if w.coords(object_id)[0] > 5 * X_GAP - 10 or \
-            w.coords(object_id)[1] < 0 * Y_GAP or \
-            w.coords(object_id)[1] == 6 * Y_GAP:
+        # remove cards in  play: x>5 and y<6
+        if (w.coords(object_id)[0] > 5 * X_GAP - 10 and
+                w.coords(object_id)[1] < 5 * Y_GAP + 10):
+           #  w.coords(object_id)[1] < 0 * Y_GAP or \
+           # (w.coords(object_id)[1] == 6 * Y_GAP and w.coords(object_id)[0] > 5 * X_GAP):
         # cards left are those on blue and not on yellow
         # if  w.coords(object_id)[0] < (5 * X_GAP - 10): # \
         #         # and w.coords(object_id)[1] < (7 * Y_GAP - 10):
             cards_left.remove(object_id)
-
-    fixed_destination = [0*X_GAP + 9, 6 * Y_GAP+19], [1*X_GAP + 9, 6 * Y_GAP+19], \
-                        [2*X_GAP + 9, 6 * Y_GAP+19], [3*X_GAP + 9, 6 * Y_GAP+19], [4*X_GAP + 9, 6 * Y_GAP+19]
+    print ('cards left', len(cards_left))
+    fixed_destination = [5*X_GAP + 7, 6 * Y_GAP+19], [6*X_GAP + 7, 6 * Y_GAP+19], \
+                        [7*X_GAP + 7, 6 * Y_GAP+19], [8*X_GAP + 7, 6 * Y_GAP+19], [9*X_GAP + 7, 6 * Y_GAP+19]
     start_location = 5 - len(cards_left)   # start_location is between 0 and 4, 5 cards start at 0, 4 at 1
     destination = fixed_destination[start_location:]
 
@@ -120,70 +122,7 @@ def show_next_hand(*args):
     twentyfive_cards = (sorted(a, key =rank_sort, reverse=True))
     window.title("Play Pyramid Poker")
     w.delete("all")   # clear out last hand
-    # create white rectangles
-    # create 10 rectangles - hand 6
-    # Y_OFFSET = 60 + 60 + 86 # add 60 to account for buttons on top
-    X_OFFSET = 5 * X_GAP + 5
-    x = X_OFFSET
-    y = Y_OFFSET
-    for i in range(10):
-        fill_color = "light yellow"
-        if i >= 0 and i <= 4:
-            fill_color = "white"
-        w.create_rectangle((x, y , x + X_GAP, y + Y_GAP), fill=fill_color, tag=("hand6", "board"))
-        x += X_GAP
-
-    # create 7 rectangles - hand 5
-    x = X_OFFSET
-    y += Y_GAP
-    for i in range(8):
-        fill_color = "light yellow"
-        if i <= 4:
-            fill_color = "white"
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill=fill_color, tags=("hand5", "board"))
-        x += X_GAP
-
-    # create 6 rectangles - hand 4
-    x = X_OFFSET
-    y += Y_GAP
-    for i in range(6):
-        fill_color = "white"
-        if i == 3 or i == 4 or i == 5:
-            fill_color = "light yellow"
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill=fill_color, tags=("hand4", "board"))
-        x += X_GAP
-
-    # create 5 rectangles - hand 3
-    x = X_OFFSET
-    y += Y_GAP
-    for i in range(5):
-        fill_color = "white"
-        if i == 4 or i == 3:
-            fill_color = "light yellow"
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill=fill_color, tags=("hand3", "board"))
-        x += X_GAP
-
-    # create 3 rectangles - hand 2
-    x = X_OFFSET
-    y += Y_GAP
-    for i in range(3):
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill="white", tags=("hand2","board"))
-        x += X_GAP
-
-    # create 1 rectangle - hand 1
-    x = X_OFFSET
-    y += Y_GAP
-    for i in range(1):
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill="white", tags=("hand1","board"))
-        x += X_GAP
-
-    # create 5 grey rectangles - discards
-    x = X_OFFSET
-    y += Y_GAP
-    for i in range(5):
-        fill_color = "light grey"
-        w.create_rectangle((x, y, x + X_GAP, y + Y_GAP), fill=fill_color, tags=("hand3", "board"))
-        x += X_GAP
+    display_board(w, X_GAP, Y_GAP, X_OFFSET, Y_OFFSET)
 
     show_twentyfive_cards()
     rank_button["state"] = "disabled"
@@ -257,6 +196,7 @@ def show_best25_hand(*args):
     # showing best hand
     window.title("Best Hand Below and Best Scores on Right")
     y_list = [0, 5 * Y_GAP, 4 *  Y_GAP, 3 * Y_GAP, 2 * Y_GAP, Y_GAP, 0]
+
     for i in [6,5,4,3,2,1]:
         x = 8
         y = y_list[i]+8
@@ -266,6 +206,8 @@ def show_best25_hand(*args):
                 overlap_factor = 5/(len(best_25handx[i])+1)
             w.create_image(x, y, image=image_dict[card[0:3]], anchor="nw", tag="best")
             x += X_GAP * overlap_factor
+
+        # determine discards
 
     # showing points of best hand
     x_label = 10 * X_GAP + 7
