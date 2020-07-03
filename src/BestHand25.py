@@ -9,6 +9,15 @@ logging.basicConfig(filename="output.txt", format='%levelname)s:%(message)s', le
 logging.debug("This is a debug level message")
 
 class BestHand25:
+    """
+    :parameter
+    pyramid_poker_list
+    best_points_so_far
+
+    attributes that are set:
+    best_pyramid_poker_hand
+    best_pyramid_poker_points
+    """
 
     def __init__(self, pyramid_poker_list, best_points_so_far):
 
@@ -31,32 +40,9 @@ class BestHand25:
         self.hand3_count = hand3_count = my_hand.hand3_count
         self.hand2_count = hand2_count = my_hand.hand2_count
         self.hand1_count = hand1_count = my_hand.hand1_count
-
-        # print (hand6_count, hand4_count)
-
         a_count = 0; ab_count = 0; abc_count = 0
         abcd_count = 0; abcde_count = 0; abcdef_count = 0
 
-        # print ("hand6")
-        # for i in range(hand6_count):
-        #     print (hand6[i])
-        # print ("hand5")
-        # for i in range(hand5_count):
-        #     print (hand5[i])
-        # print ("hand4")
-        # for i in range(hand4_count):
-        #     print (hand4[i])
-        # print ("hand3")
-        # for i in range(hand3_count):
-        #     print (hand3[i])
-        # print ("hand2")
-        # for i in range(hand2_count):
-        #     print (hand2[i])
-        # print ("hand1")
-        # for i in range(hand1_count):
-        #     print (hand1[i])
-
-        six_hands = PokerHand()
         # print ("-- Hands {0:>4} {1:>4} {2:>3} {3:>3} {4:>3} {5:>3}".format(hand6_count,
         #            hand5_count, hand4_count, hand3_count, hand2_count, hand1_count),end="")
         # print
@@ -103,7 +89,6 @@ class BestHand25:
                 best_points_possible = (h6_points + max_hand5)
                 if best_points_possible + cushion > best_points_total:
                     for j in range(i+1, hand5_count):
-                        # print("hand 2 - j", j)
                         b = set(hand5[j][0])
                         h5 = hand5[j][1]
                         h5_points = hand5[j][2]
@@ -244,13 +229,9 @@ class BestHand25:
 
                                                             pyramid_hand = ([0, hand_1, hand_2, hand_3, hand_4, hand_5, hand_6])
                                                             # print((pyramid_hand, cards_remaining))
-                                                            hand_points = six_hands.get_six_hands_points(pyramid_hand)
+                                                            six_poker_hands = PokerHand()
+                                                            hand_points = six_poker_hands.get_six_hands_points(pyramid_hand)
                                                             points_total = hand_points[0]
-
-                                                            # print("Next", hand_points[6][1], hand_points[5][1],
-                                                            #     hand_points[4][1], hand_points[3][1], hand_points[2][1],
-                                                            #     hand_points[1][1], points_total, end="")
-                                                            # print(pyramid_hand[6:0:-1])
 
                                                             logging.info((h6_points, h5_points, h4_points, h3_points, h2_points, h1_points, points_total))
                                                             best_scores.append ((hand_points[0], hand_points, pyramid_hand[1:7]))
@@ -259,7 +240,8 @@ class BestHand25:
                                                                 best_hand_count = count_try
                                                                 best_pyramid_poker_hand = pyramid_hand
                                                                 # print
-                                                                # print("          New best", hand_points[6], hand_points[5], hand_points[4],hand_points[3], hand_points[2], hand_points[1], best_points_total)
+                                                                # print("          New best", hand_points[6], hand_points[5], hand_points[4],
+                                                                #          hand_points[3], hand_points[2], hand_points[1], best_points_total)
                                                                 # print (best_pyramid_poker_hand[6:0:-1])
                                                             count_try += 1
                                                             # break
@@ -274,13 +256,15 @@ class BestHand25:
         if count_try == 0:
             count_try = 1
         # print ("count_intersect, count_union", count_intersect, count_union)
+
         percent_found = round(best_hand_count*100/count_try)
         # print ("-- Total:{0:>10,}, Best: {1:>6,}, Time: {2:>6}, Hands/Sec: {3:>9,} Found: {4:>2}%"\
         #    .format(count_try, best_hand_count, elapse_time, hands_per_sec, percent_found), end="")
+
         self.best_pyramid_poker_hand = best_pyramid_poker_hand
         # print ("-- Total:{0:>10,}, a:{1:>5,} b:{2:>8,} c:{3:>10,} d:{4:>9,} e:{5:>4,} f:{6:>4,}, i: {7:>10,}, u: {8:>9,} Best: {9:>6,}, Time: {10:>6}, Hands/Sec: {11:>9,} Found: {12:>2}%"\
         #   .format(count_try, a_count, ab_count, abc_count, abcd_count, abcde_count, abcdef_count, count_intersect, count_union, best_hand_count, elapse_time, hands_per_sec, percent_found), end="")
-        # self.best_pyramid_poker_hand = best_pyramid_poker_hand
+
         # recalculate best_points after fill
         best_hand = PokerHand()
         if len(best_pyramid_poker_hand) == 0:
@@ -294,8 +278,6 @@ class BestHand25:
             self.best_points = best_points  # hand1 in best_points[1] etc.
             self.best_hand_points = best_points[0], best_points[6], best_points[5], best_points[4], best_points[3], \
                                 best_points[2], best_points[1]
-        # self.five_card_hands = len(hand6)
-        # self.three_card_hands = len(hand4)
         self.hands_count = count1
         self.time = elapse_time
         self.best_hand_count = best_hand_count # best points [6]-[1]
